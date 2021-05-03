@@ -49,4 +49,4 @@ ENV PATH="/opt/venv/bin:$PATH"
 ENV CELERY_BROKER_URL redis://redis:6379/0
 ENV CELERY_RESULT_BACKEND redis://redis:6379/0
 
-ENTRYPOINT celery -A tasks worker --loglevel=info -c 4
+ENTRYPOINT celery -A tasks worker --loglevel=info -c 1

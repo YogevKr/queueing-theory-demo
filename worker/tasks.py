@@ -11,6 +11,8 @@ celery = Celery("tasks", broker=CELERY_BROKER_URL, backend=CELERY_RESULT_BACKEND
 redis = Redis(host="redis", port=6379, db=0)
 
 key_prefix_received_timestamp = "task_received_timestamp"
+key_total_time = "total_time_tasks"
+key_run_time = "run_time_tasks"
 dict_prerun_timestamp = {}
 
 
@@ -32,10 +34,13 @@ def task_postrun_handler(
         t = time.time()
         total_cost = t - float(redis.get(f"{key_prefix_received_timestamp}_{task_id}"))
         run_cost = t - dict_prerun_timestamp.pop(task_id)
-    except (KeyError, TypeError) as e:
-        total_cost, run_cost = -1, -1
-    print(f"{total_cost}, {run_cost}")
 
+        print(total_cost)
+
+        redis.rpush(key_total_time, total_cost)
+        redis.rpush(key_run_time, run_cost)
+    except (KeyError, TypeError) as e:
+        print(e, task_id)
 
 @celery.task(name="tasks.sleep")
 def sleep(t: int):

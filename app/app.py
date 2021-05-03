@@ -1,34 +1,58 @@
+import time
+from collections import deque
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import streamlit as st
+from redis import Redis
+
 from worker import celery
-import matplotlib.pyplot as plt
-import time
-import numpy as np
-from collections import deque
+
+redis = Redis(host="redis", port=6379, db=0)
+
+key_total_time = "total_time_tasks"
+key_run_time = "run_time_tasks"
+
+
+def reset():
+    redis.delete(key_total_time)
+    redis.delete(key_run_time)
+    redis.delete("celery")
+    celery.control.purge()
+
+
+reset()
 
 st.title("Simple Streamlit App")
 
 if st.button("Say hello"):
-    st.write(celery.send_task("tasks.sleep", args=[5], kwargs={}))
+    reset()
 
 progress_bar = st.sidebar.progress(0)
 status_text = st.sidebar.empty()
-last_rows = np.random.randn(1, 1)
-chart = st.line_chart(last_rows)
 
-for i in range(1, 101):
-    new_rows = last_rows[-1, :] + np.random.randn(5, 1).cumsum(axis=0)
-    new_rows = np.random.randn(1, 1)
-    status_text.text("%i%% Complete" % i)
-    chart.add_rows(new_rows)
-    progress_bar.progress(i)
-    last_rows = new_rows
-    time.sleep(0.05)
+chart = st.line_chart(pd.DataFrame([[0.0, 0.0]], columns=["Total time", "Run time"]))
+
+counter = 0
+
+while True:
+    celery.send_task("tasks.sleep", args=[5], kwargs={})
+
+    number_of_repordet_tasks = redis.llen(key_total_time)
+    while counter < number_of_repordet_tasks:
+        total_time = redis.lindex(key_total_time, counter) or 0
+        rum_time = redis.lindex(key_run_time, counter) or 0
+        chart.add_rows(
+            pd.DataFrame(
+                [[float(total_time), float(rum_time)]],
+                columns=["Total time", "Run time"],
+            )
+        )
+        counter += 1
+    # status_text.text("%i%% Complete" % i)
+
+    # progress_bar.progress(i)
+    time.sleep(1)
 
 progress_bar.empty()
-
-# Streamlit widgets automatically run the script from top to bottom. Since
-# this button is not connected to any other logic, it just causes a plain
-# rerun.
-st.button("Re-run")

@@ -16,19 +16,27 @@ services:
       - redis
     depends_on:
       - redis
-      - worker
 
   redis:
     image: redis:latest
-    container_name: rd01
+    # container_name: rd01
     ports:
       - '6377:6379'
 
-  worker:
+  producer:
     build:
-      context: ./worker
-      dockerfile: Dockerfile
+      dockerfile: ./Dockerfile
+      context: ./producer
     depends_on:
       - redis
     volumes:
-      - './worker:/usr/src/app/:delegated'
+      - './producer:/usr/src/app/:delegated'
+
+  consumer:
+    build:
+      dockerfile: ./Dockerfile
+      context: ./consumer
+    depends_on:
+      - redis
+    volumes:
+      - './consumer:/usr/src/app/:delegated'

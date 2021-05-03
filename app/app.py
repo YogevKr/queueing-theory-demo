@@ -24,9 +24,9 @@ def reset():
 
 reset()
 
-st.title("Simple Streamlit App")
+st.title("Queueing Theory Demo")
 
-if st.button("Say hello"):
+if st.button("Reset"):
     reset()
 
 progress_bar = st.sidebar.progress(0)
@@ -37,7 +37,6 @@ chart = st.line_chart(pd.DataFrame([[0.0, 0.0]], columns=["Total time", "Run tim
 counter = 0
 
 while True:
-    celery.send_task("tasks.sleep", args=[5], kwargs={})
 
     number_of_repordet_tasks = redis.llen(key_total_time)
     while counter < number_of_repordet_tasks:
@@ -53,6 +52,6 @@ while True:
     # status_text.text("%i%% Complete" % i)
 
     # progress_bar.progress(i)
-    time.sleep(1)
+    time.sleep(0.1)
 
 progress_bar.empty()

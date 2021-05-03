@@ -2,6 +2,7 @@ import os
 import time
 from celery import Celery
 from redis import Redis
+import numpy as np
 
 CELERY_BROKER_URL = (os.environ.get("CELERY_BROKER_URL", "redis://redis:6379"),)
 CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND", "redis://redis:6379")
@@ -21,6 +22,9 @@ def main():
     while True:
         arrivals_rate = redis.get(key_arrivals_rate) or 1
         departures_rate = redis.get(key_departures_rate) or 1
+
+        # time.sleep(np.random.exponential(float(arrivals_rate)))
+        # celery.send_task("tasks.sleep", args=[np.random.exponential(float(departures_rate))], kwargs={})
         time.sleep(float(arrivals_rate))
         celery.send_task("tasks.sleep", args=[float(departures_rate)], kwargs={})
 

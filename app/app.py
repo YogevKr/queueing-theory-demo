@@ -14,6 +14,12 @@ redis = Redis(host="redis", port=6379, db=0)
 key_total_time = "total_time_tasks"
 key_run_time = "run_time_tasks"
 
+key_arrivals_rate = "arrivals-rate"
+key_departures_rate = "departures-rate"
+key_arrivals_distributaion = "arrivals-distributaion"
+key_departures_distributaion = "departures-distributaion"
+key_on_off = "producer_run"
+
 
 def reset():
     redis.delete(key_total_time)
@@ -28,6 +34,13 @@ st.title("Queueing Theory Demo")
 
 if st.button("Reset"):
     reset()
+
+arrivals_rate = st.slider("Arrivals Rate", 2, 10, 2)
+redis.set(key_arrivals_rate, arrivals_rate)
+
+departures_rate = st.slider("Departures Rate", 2, 10, 2)
+redis.set(key_departures_rate, departures_rate)
+
 
 progress_bar = st.sidebar.progress(0)
 status_text = st.sidebar.empty()

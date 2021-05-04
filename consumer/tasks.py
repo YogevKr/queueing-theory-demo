@@ -1,7 +1,8 @@
 import os
 import time
+
 from celery import Celery
-from celery.signals import task_received, task_prerun, task_postrun
+from celery.signals import task_postrun, task_prerun, task_received
 from redis import Redis
 
 CELERY_BROKER_URL = (os.environ.get("CELERY_BROKER_URL", "redis://redis:6379"),)
@@ -19,7 +20,7 @@ dict_prerun_timestamp = {}
 @task_received.connect
 def task_received_handler(sender=None, headers=None, body=None, request=None, **kwargs):
     redis.set(f"{key_prefix_received_timestamp}_{request.id}", time.time())
-    
+
 
 @task_prerun.connect
 def task_prerun_handler(signal, sender, task_id, task, args, kwargs, **extras):
@@ -35,12 +36,13 @@ def task_postrun_handler(
         total_cost = t - float(redis.get(f"{key_prefix_received_timestamp}_{task_id}"))
         run_cost = t - dict_prerun_timestamp.pop(task_id)
 
-        print(total_cost)
+        print(f"Total cost - {total_cost}")
 
         redis.rpush(key_total_time, total_cost)
         redis.rpush(key_run_time, run_cost)
     except (KeyError, TypeError) as e:
         print(e, task_id)
+
 
 @celery.task(name="tasks.sleep")
 def sleep(t: int):

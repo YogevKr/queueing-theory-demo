@@ -19,12 +19,6 @@ key_run_time = "run_time_tasks"
 dict_prerun_timestamp = {}
 
 
-# @task_received.connect
-# def task_received_handler(sender=None, headers=None, body=None, request=None, **kwargs):
-#     # redis.set(f"{key_prefix_received_timestamp}_{request.id}", time.time())
-#     pass
-
-
 @task_prerun.connect
 def task_prerun_handler(signal, sender, task_id, task, args, kwargs, **extras):
     dict_prerun_timestamp[task_id] = time.time()

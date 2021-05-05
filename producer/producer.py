@@ -24,7 +24,7 @@ key_restarted_flag = "restarted_flag"
 
 
 def sample_from_disrebution(scale: float, type: str = None) -> float:
-    if not type or type.lower() == "fixed":
+    if not type or type.lower() == "deterministic":
         return scale
     elif type.lower() == "poisson":
         return np.random.exponential(scale=scale)
@@ -36,18 +36,13 @@ def sample_from_disrebution(scale: float, type: str = None) -> float:
         return scale
 
 
-def scale_workers(
-    current_number_of_workers: int, expected_number_of_workers: int
-) -> int:
+def scale_workers(current_number_of_workers: int, expected_number_of_workers: int):
     if expected_number_of_workers > current_number_of_workers:
         controller.pool_grow(expected_number_of_workers - current_number_of_workers)
         print("pool_grow", expected_number_of_workers - current_number_of_workers)
-        current_number_of_workers = expected_number_of_workers
     elif expected_number_of_workers < current_number_of_workers:
-        controller.pool_shrink(current_number_of_workers - expected_number_of_workers)
+        controller.pool_shrink(1)
         print("pool_shrink", current_number_of_workers - expected_number_of_workers)
-        current_number_of_workers = expected_number_of_workers
-    return current_number_of_workers
 
 
 def main():
@@ -56,11 +51,14 @@ def main():
 
     while True:
         expected_number_of_workers = int(redis.get(key_number_of_workers) or 1)
-        print("expected_number_of_workers", expected_number_of_workers)
         if expected_number_of_workers != current_number_of_workers:
             current_number_of_workers = scale_workers(
                 current_number_of_workers, expected_number_of_workers
             )
+            current_number_of_workers = list(celery.control.inspect().stats().values())[
+                0
+            ]["prefetch_count"]
+            print(current_number_of_workers)
         if redis.get(key_producer_run):
             redis.delete(key_restarted_flag)
             arrivals_rate = redis.get(key_arrivals_rate) or 1

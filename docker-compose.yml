@@ -28,6 +28,7 @@ services:
       context: ./producer
     depends_on:
       - redis
+      - consumer
     volumes:
       - './producer:/usr/src/app/:delegated'
 

@@ -3,25 +3,30 @@ import time
 
 import numpy as np
 from celery import Celery
+from celery.app.control import Control
 from redis import Redis
 
 CELERY_BROKER_URL = (os.environ.get("CELERY_BROKER_URL", "redis://redis:6379"),)
 CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND", "redis://redis:6379")
 
 celery = Celery("tasks", broker=CELERY_BROKER_URL, backend=CELERY_RESULT_BACKEND)
+controller = Control(celery)
 redis = Redis(host="redis", port=6379, db=0, charset="utf-8", decode_responses=True)
 
+key_prefix_received_timestamp = "task_received_timestamp"
 key_arrivals_rate = "arrivals-rate"
 key_departures_rate = "departures-rate"
 key_arrivals_distributaion = "arrivals-distributaion"
 key_departures_distributaion = "departures-distributaion"
 key_producer_run = "producer_run"
+key_number_of_workers = "number_of_workers"
+key_restarted_flag = "restarted_flag"
 
 
 def sample_from_disrebution(scale: float, type: str = None) -> float:
-    if not type or type == "None":
+    if not type or type.lower() == "fixed":
         return scale
-    elif type.lower() == "exponential":
+    elif type.lower() == "poisson":
         return np.random.exponential(scale=scale)
     elif type.lower() == "normal":
         v = np.random.normal(scale=scale)
@@ -31,10 +36,33 @@ def sample_from_disrebution(scale: float, type: str = None) -> float:
         return scale
 
 
+def scale_workers(
+    current_number_of_workers: int, expected_number_of_workers: int
+) -> int:
+    if expected_number_of_workers > current_number_of_workers:
+        controller.pool_grow(expected_number_of_workers - current_number_of_workers)
+        print("pool_grow", expected_number_of_workers - current_number_of_workers)
+        current_number_of_workers = expected_number_of_workers
+    elif expected_number_of_workers < current_number_of_workers:
+        controller.pool_shrink(current_number_of_workers - expected_number_of_workers)
+        print("pool_shrink", current_number_of_workers - expected_number_of_workers)
+        current_number_of_workers = expected_number_of_workers
+    return current_number_of_workers
+
+
 def main():
     print("Starting..")
+    current_number_of_workers = 1
+
     while True:
+        expected_number_of_workers = int(redis.get(key_number_of_workers) or 1)
+        print("expected_number_of_workers", expected_number_of_workers)
+        if expected_number_of_workers != current_number_of_workers:
+            current_number_of_workers = scale_workers(
+                current_number_of_workers, expected_number_of_workers
+            )
         if redis.get(key_producer_run):
+            redis.delete(key_restarted_flag)
             arrivals_rate = redis.get(key_arrivals_rate) or 1
             departures_rate = redis.get(key_departures_rate) or 1
             arrivals_distributaion = redis.get(key_arrivals_distributaion)
@@ -47,8 +75,15 @@ def main():
                 float(departures_rate), departures_distributaion
             )
             print(arrival_time, departures_time)
+
             time.sleep(arrival_time)
-            celery.send_task("tasks.sleep", args=[departures_time], kwargs={})
+            if not redis.get(key_restarted_flag):
+                task_id = celery.send_task(
+                    "tasks.sleep", args=[departures_time], kwargs={}
+                )
+                redis.set(f"{key_prefix_received_timestamp}_{task_id}", time.time())
+        else:
+            time.sleep(0.1)
 
 
 if __name__ == "__main__":

@@ -7,7 +7,7 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 # add and install requirements
 RUN pip install --upgrade pip
-COPY . .
+COPY ./requirements.txt .
 RUN pip install -r requirements.txt
 
 #################

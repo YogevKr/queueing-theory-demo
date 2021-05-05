@@ -9,6 +9,8 @@ CELERY_BROKER_URL = (os.environ.get("CELERY_BROKER_URL", "redis://redis:6379"),)
 CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND", "redis://redis:6379")
 
 celery = Celery("tasks", broker=CELERY_BROKER_URL, backend=CELERY_RESULT_BACKEND)
+celery.conf.worker_prefetch_multiplier = 1
+
 redis = Redis(host="redis", port=6379, db=0)
 
 key_prefix_received_timestamp = "task_received_timestamp"
@@ -17,9 +19,10 @@ key_run_time = "run_time_tasks"
 dict_prerun_timestamp = {}
 
 
-@task_received.connect
-def task_received_handler(sender=None, headers=None, body=None, request=None, **kwargs):
-    redis.set(f"{key_prefix_received_timestamp}_{request.id}", time.time())
+# @task_received.connect
+# def task_received_handler(sender=None, headers=None, body=None, request=None, **kwargs):
+#     # redis.set(f"{key_prefix_received_timestamp}_{request.id}", time.time())
+#     pass
 
 
 @task_prerun.connect
@@ -45,5 +48,5 @@ def task_postrun_handler(
 
 
 @celery.task(name="tasks.sleep")
-def sleep(t: int):
+def sleep(t: float):
     time.sleep(t)

@@ -37,11 +37,11 @@ st.sidebar.title("Queueing Theory Demo")
 
 
 arrivals_distributaion = st.sidebar.selectbox(
-    "Arrivals Distributaion", ("Poisson", "Deterministic")
+    "Arrivals Distributaion", ("Poisson", "Deterministic", "Normal")
 )
 arrivals_rate = st.sidebar.slider("Arrivals Rate (per minute)", 10, 60, 30)
 departures_distributaion = st.sidebar.selectbox(
-    "Departures Distributaion", ("Poisson", "Deterministic")
+    "Departures Distributaion", ("Poisson", "Deterministic", "Normal")
 )
 departures_rate = st.sidebar.slider("Departures Rate (per minute)", 10, 60, 30)
 
@@ -49,7 +49,7 @@ number_of_workers = st.sidebar.slider("Number of wokrers", 1, 10, 1)
 
 number_of_tasks = st.sidebar.slider("Number of tasks", 10, 1000, 100, 10)
 
-queue_types = {"Deterministic": "D", "Poisson": "M", "Normal": "G"}
+queue_types = {"Deterministic": "D", "Poisson": "M", "Normal": "N"}
 
 st.header("Parameters")
 st.markdown(

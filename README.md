@@ -1,7 +1,10 @@
 # queueing-theory-demo
 Queueing Theory Demo
 
+Instructions:
 ```
+git clone https://github.com/YogevKr/queueing-theory-demo.git
+cd queueing-theory-demo
 docker-compose up
 ```
 

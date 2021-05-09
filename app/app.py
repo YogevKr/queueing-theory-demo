@@ -98,7 +98,8 @@ if auto_start or start_simulation:
                 )
             )
             l_q = redis.llen("celery")
-            l_service = len(list(inspector.active().values())[0])
+            active_ = inspector.active()
+            l_service = len(list(active_.values())[0]) if active_ else 0
             number_of_tasks_in_the_queue.append(l_q + l_service)
             counter += 1
             W_average_waiting_time = statistics.mean(

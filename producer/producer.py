@@ -29,7 +29,7 @@ key_number_of_workers = "number_of_workers"
 key_restarted_flag = "restarted_flag"
 
 
-def sample_from_disrebution(scale: float, type: str = None) -> float:
+def sample_from_distributaion(scale: float, type: str = None) -> float:
     if not type or type.lower() == "deterministic":
         return scale
     elif type.lower() == "poisson":
@@ -79,10 +79,10 @@ def main():
             arrivals_distributaion = redis.get(key_arrivals_distributaion)
             departures_distributaion = redis.get(key_departures_distributaion)
 
-            arrival_time = sample_from_disrebution(
+            arrival_time = sample_from_distributaion(
                 float(arrivals_rate), arrivals_distributaion
             )
-            departures_time = sample_from_disrebution(
+            departures_time = sample_from_distributaion(
                 float(departures_rate), departures_distributaion
             )
             logger.info(

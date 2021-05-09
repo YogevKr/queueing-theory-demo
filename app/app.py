@@ -122,7 +122,7 @@ if auto_start or start_simulation:
             steady_state_probabilities.bar_chart(df / df["Number of customers"].sum())
 
             status_text.text(f"{counter} Complete")
-            progress_bar.progress(counter / number_of_tasks)
+            progress_bar.progress(min(counter / number_of_tasks, 1))
 
         time.sleep(0.1)
 
